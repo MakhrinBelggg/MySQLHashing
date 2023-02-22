@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Sockets;
 using SD = System.Data;
 using MySql.Data.MySqlClient;
-using System.Text;
 
 namespace MySQLOnline
 {
@@ -56,7 +55,6 @@ namespace MySQLOnline
                 return errorTable;
             }
         }
-
         private static string tableToString(SD.DataTable table)
         {
             if (table == null)
@@ -99,7 +97,6 @@ namespace MySQLOnline
             }
             return dataTable;
         }
-
         public static SD.DataTable stringToTable(string data)
         {
             SD.DataTable dataTable = new SD.DataTable("tableName");
@@ -128,10 +125,10 @@ namespace MySQLOnline
                 dataRows[i]["user_login"] = columns[2];
                 dataRows[i]["user_pwd"] = columns[3];
                 dataRows[i]["row_hash"] = columns[4];
-                
+
                 dataTable.Rows.Add(dataRows[i]);
             }
-            
+
             return dataTable;
         }
         public static SD.DataSet createDataSet(string data)
@@ -188,16 +185,10 @@ namespace MySQLOnline
 
         }
 
-        private void toolStripButton1_Click(object sender, EventArgs e)
-        {
-
-
-        }
-
         private void toolStripTextBox2_TextChanged(object sender, EventArgs e)
         {
             password = toolStripTextBox2.Text;
-            
+
         }
 
         private void toolStripTextBox1_TextChanged(object sender, EventArgs e)
@@ -207,7 +198,7 @@ namespace MySQLOnline
 
         private void toolStripTextBox3_Click(object sender, EventArgs e)
         {
-            
+
         }
 
         private void toolStripTextBox3_TextChanged(object sender, EventArgs e)
@@ -217,54 +208,38 @@ namespace MySQLOnline
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (stream == null || client == null)
-            {
-                return;
-            }
-            // отправить логи для входа в бд также
-            string request = textBox1.Text;
-            byte[] bytesWrite = Encoding.ASCII.GetBytes(request); // конвертировали запрос для отправки
-
-            stream.Write(bytesWrite, 0, bytesWrite.Length);  // отправляем, с 0 эл-та, длинны bytesWrite.Length
-                                                             //stream.Flush();
-                                                             //Console.WriteLine("Client sent request.");
-            string answer = string.Empty;
-   
-               if (request != null)
-               {
-                                     
-                   byte[] bytesRead = new byte[1024];
-                   int length = stream.Read(bytesRead, 0, bytesRead.Length); 
-                   // запись полученного ответа в bytesRead, подсчет длинны bytesRea
-
-                   answer = Encoding.UTF8.GetString(bytesRead, 0, length);
-               }
-               else
-               {
-                   stream.Close();
-                   Console.WriteLine("\nNull request");
-                   Console.WriteLine("\nClient closed");
-               }
-            
-            client.Close();
-
-            dataGridView1.DataSource = convertStringToDataTable(answer);
-            textBox2.Text = answer;
-        }
-
-        private void toolStripButton1_Click_1(object sender, EventArgs e)
-        {            
-            //try to connect
             try
             {
-                client = new TcpClient("127.0.0.1", 7000);
-                //Console.WriteLine("Client connected");
+                string request = textBox1.Text;
+                if (string.IsNullOrEmpty(request) || string.IsNullOrWhiteSpace(request)) return;
+
+                client = new TcpClient("IP HERE", 5000); //connecting to server
                 stream = client.GetStream();
+
+                byte[] bytesWrite = Encoding.ASCII.GetBytes(request); // preparing request to sending
+
+                stream.Write(bytesWrite, 0, bytesWrite.Length);  // , start from 0 digit, length bytesWrite.Length
+                stream.Flush();
+                string answer = string.Empty;
+
+                byte[] bytesRead = new byte[2048];
+                int length = stream.Read(bytesRead, 0, bytesRead.Length);
+                answer = Encoding.UTF8.GetString(bytesRead, 0, length);
+                // writing answer to bytesRead, fidning length of bytesRead and parcing to string UTF8 
+
+                stream.Close();
+                dataGridView1.DataSource = convertStringToDataTable(answer);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                if (stream != null) stream.Close();
+
+                MessageBox.Show("Error connection or request", "Error", MessageBoxButtons.OK);
+                //Console.WriteLine(ex.Message);
+                //Console.WriteLine("\nNull request");
+                //Console.WriteLine("\nClient closed");
             }
         }
+
     }
 }
