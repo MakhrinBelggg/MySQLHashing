@@ -1,0 +1,543 @@
+using SD = System.Data;
+using MySql.Data.MySqlClient;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace SecurityQueryMySQL
+{
+    public class Class1
+    { 
+        
+        public static MySqlConnection? mycon;
+        public static MySqlCommand? mycom;
+        public static readonly string connect = "Server=localhost;Database=mytestcompany;Uid=root;pwd=GLEBPC-X666;charset=utf8;";
+        public static SD.DataSet? ds;
+
+        private void GetRows(SD.DataTable tableName)
+        {
+            // Get the DataTable of a DataSet.
+            SD.DataTable table = tableName;
+            SD.DataRow[] rows = table.Select();
+
+            // Print the value one column of each DataRow.
+            //for (int i = 0; i < rows.Length; i++)
+            //{
+            //    Console.WriteLine(rows[i]["CompanyName"]);
+            //}
+        }
+        private static string tableToString(SD.DataTable table)
+        {
+            if (table == null)
+            {
+                return "null table";
+            }
+
+            string str = new("");
+
+            foreach (SD.DataRow dataRow in table.Rows)
+            {
+                foreach (var item in dataRow.ItemArray)
+                {
+                    str += (item + "\t");
+                }
+                str += "\n";
+            }
+
+            return str;
+        }
+        private static void searchMySql(string ask)
+        {
+            if (ask == null)
+            {
+                Console.WriteLine("ERROR");
+                return;
+            }
+
+            mycon = new MySqlConnection(connect);
+            mycon.Open();
+            Console.WriteLine("DB Connected");
+
+            string script = "SELECT * FROM userlog WHERE user_pwd LIKE'%" + ask + "%'";
+
+            MySqlDataAdapter ms_data = new MySqlDataAdapter(script, connect);
+            SD.DataTable table = new SD.DataTable();
+            ms_data.Fill(table);
+            Console.WriteLine("here");
+
+            foreach (SD.DataRow dataRow in table.Rows)
+            {
+                foreach (var item in dataRow.ItemArray)
+                {
+                    Console.Write(item + "\t");
+                }
+                Console.Write("\n");
+            }
+
+            mycon.Close();
+        }
+        private static void showColumnsMySql()
+        {
+            mycon = new MySqlConnection(connect);
+            mycon.Open();
+            Console.WriteLine("DB Connected");
+            Console.WriteLine("------------------------------------------------------------------------------------------");
+            string scrpt = "SHOW COLUMNS FROM userlog";
+            MySqlDataAdapter msql_dt = new MySqlDataAdapter(scrpt, mycon);
+            SD.DataTable table = new SD.DataTable();
+            msql_dt.Fill(table);
+
+            foreach (SD.DataColumn column in table.Columns)
+                Console.Write(column.ColumnName + "\t\t");
+            Console.Write("\n");
+            Console.WriteLine("------------------------------------------------------------------------------------------");
+            foreach (SD.DataRow dataRow in table.Rows)
+            {
+                foreach (var item in dataRow.ItemArray)
+                {
+                    Console.Write(item + "\t\t");
+                }
+                Console.Write("\n");
+            }
+
+            mycon.Close();
+        }
+        private static void queryMySql()
+        {
+            try
+            {
+                mycon = new MySqlConnection(connect);
+                mycon.Open();
+                Console.WriteLine("DB Connected");
+
+                string script = "SELECT * FROM userlog"; // запрос
+
+                MySqlDataAdapter da = new MySqlDataAdapter(script, connect);
+                MySqlCommandBuilder cb = new MySqlCommandBuilder(da);
+
+                SD.DataSet ds = new SD.DataSet();
+                da.Fill(ds, "userlog");
+                SD.DataTable dt = new SD.DataTable();
+                da.Fill(dt);
+
+                foreach (SD.DataRow dataRow in dt.Rows)
+                {
+                    foreach (var item in dataRow.ItemArray)
+                    {
+                        Console.Write(item + "\t");
+                    }
+                    Console.Write("\n");
+                }
+
+                mycon.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        private static void insertMySql()
+        {
+            using (MySqlConnection cn = new MySqlConnection(connect))
+            {
+                try
+                {
+                    string query = "INSERT INTO userlog (user_name, user_login, user_pwd) VALUES (@user_name,@user_login,@user_pwd);";
+                    cn.Open();
+                    using (MySqlCommand cmd = new MySqlCommand(query, cn))
+                    {
+                        //cmd.Parameters.AddWithValue("?user_name", MySqlDbType.VarChar).Value = "Textds name2";
+                        //cmd.Parameters.AddWithValue("?user_login", MySqlDbType.VarChar).Value = "namelogin2";
+                        //cmd.Parameters.AddWithValue("?user_pwd", MySqlDbType.VarChar).Value = "paswpffa2";
+                        cmd.Parameters.AddWithValue("?user_name", "Textds name2");
+                        cmd.Parameters.AddWithValue("?user_login", "namelogin2");
+                        cmd.Parameters.AddWithValue("?user_pwd", "paswpffa2");
+                        cmd.ExecuteNonQuery();
+                    }
+                    cn.Close();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+        }
+        static SD.DataSet createDataSet()
+        {
+            SD.DataSet dataBase = new("University");
+
+            SD.DataTable dataTable = new("Students");
+
+            SD.DataColumn ID = new("ID", typeof(int));
+            ID.Unique = true;
+            ID.AutoIncrement = true;
+            ID.AutoIncrementSeed = 1;
+            ID.AutoIncrementStep = 1;
+            SD.DataColumn Name = new("Name", typeof(string));
+            SD.DataColumn Surname = new("Surname", typeof(string));
+            SD.DataColumn Age = new("Age", typeof(int));
+
+            SD.DataRow row1 = dataTable.NewRow();
+            row1["Name"] = "John";
+            row1["Surname"] = "Hamilton";
+            row1["Age"] = 23;
+
+            SD.DataRow row2 = dataTable.NewRow();
+            row2[1] = "Mary";
+            row2[2] = "Smirko";
+            row2[3] = 19;
+
+            dataTable.Rows.Add(row1);
+            dataTable.Rows.Add(row2);
+
+            dataBase.Tables.Add(dataTable);
+
+            return dataBase;
+        }
+
+        public static string GetHash(HashAlgorithm hashAlgorithm, string input)
+        {
+
+            // Convert the input string to a byte array and compute the hash.
+            byte[] data = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(input));
+
+            // Create a new Stringbuilder to collect the bytes
+            // and create a string.
+            var sBuilder = new StringBuilder();
+
+            // Loop through each byte of the hashed data
+            // and format each one as a hexadecimal string.
+            for (int i = 0; i < data.Length; i++)
+            {
+                sBuilder.Append(data[i].ToString("x2"));
+            }
+
+            // Return the hexadecimal string.
+            return sBuilder.ToString();
+        }
+
+        public static bool VerifyHash(HashAlgorithm hashAlgorithm, string input, string hash)
+        {
+            // Hash the input.
+            var hashOfInput = GetHash(hashAlgorithm, input);
+
+            // Create a StringComparer an compare the hashes.
+            StringComparer comparer = StringComparer.OrdinalIgnoreCase;
+
+            return comparer.Compare(hashOfInput, hash) == 0;
+        }
+       
+        public static string findRowHash(SD.DataTable table)
+        {
+            if (table != null)
+            {
+                string str = new string("");
+                foreach (SD.DataRow dataRow in table.Rows)
+                {
+                    for (var i = 1; i < dataRow.ItemArray.Length - 1; i++)
+                    {
+                        var item = dataRow.ItemArray[i];
+                        str = str + item;
+                        //Console.Write(item + "\t");
+                    }
+                    if (str.Contains(' '))
+                    {
+                        string[] chop = str.Split(' ');
+                        str = "";
+                        foreach (string ch in chop)
+                        {
+                            str = str + ch;
+                        }
+                    }
+                    //foreach (var item in dataRow.ItemArray)
+                    //    str = str + item;
+                }
+                using (SHA256 sha256Hash = SHA256.Create())
+                {
+                    string hash = GetHash(sha256Hash, str);
+                    return hash;
+                }
+            }
+            return null;
+        }
+
+        public static SD.DataTable performQuery(string query)
+        {
+            if (query == null)
+            {
+                SD.DataTable errorTable = new SD.DataTable();
+                SD.DataColumn dataColumn = new("error", typeof(string));
+                errorTable.Columns.Add(dataColumn);
+                SD.DataRow dataRow = errorTable.NewRow();
+                dataRow[0] = "Error: null query";
+                errorTable.Rows.Add(dataRow);
+                return errorTable;
+            }
+            try
+            {
+                mycon = new MySqlConnection(connect);
+                mycon.Open();
+
+                SD.DataTable table = new SD.DataTable();
+                MySqlDataAdapter msql_dt = new MySqlDataAdapter(query, mycon);
+                msql_dt.Fill(table);
+
+                mycon.Close();
+                return table;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                SD.DataTable errorTable = new SD.DataTable();
+                SD.DataColumn dataColumn = new("error", typeof(string));
+                errorTable.Columns.Add(dataColumn);
+                SD.DataRow dataRow = errorTable.NewRow();
+                dataRow[0] = "Error: DB connection error";
+                errorTable.Rows.Add(dataRow);
+                return errorTable;
+            }
+        }
+
+        public static SD.DataTable performSecQuery(string query)
+        {
+            if (query == null)
+            {
+                SD.DataTable errorTable = new SD.DataTable();
+                SD.DataColumn dataColumn = new("error", typeof(string));
+                errorTable.Columns.Add(dataColumn);
+                SD.DataRow dataRow = errorTable.NewRow();
+                dataRow[0] = "Error: null query";
+                errorTable.Rows.Add(dataRow);
+                return errorTable;
+            }
+            try
+            {
+                mycon = new MySqlConnection(connect);
+                mycon.Open();
+
+                SD.DataTable table = new SD.DataTable();
+                query = modifyQuery(query);
+                table = performQuery(query);
+                return table;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                SD.DataTable errorTable = new SD.DataTable();
+                SD.DataColumn dataColumn = new("error", typeof(string));
+                errorTable.Columns.Add(dataColumn);
+                SD.DataRow dataRow = errorTable.NewRow();
+                dataRow[0] = "Error: DB connection error";
+                errorTable.Rows.Add(dataRow);
+                return errorTable;
+            }
+        }
+
+        public static string modifyQuery(string query)
+        {
+            if (query == null) return null;
+            try
+            {
+                string newQuery = new("");
+                string[] substr = query.Split(' ');
+                // 0 - select/insert/update/delete
+                // 1 - column name
+                // 2 - from 
+                // 3 - table name
+                // 4 - where 
+                // 5,6,7 - condition (id = 3;)
+                short flag = 0;
+
+                switch (substr[0].ToUpper())
+                {
+                    case "SELECT":
+                        {
+                            //flag = 1;
+                            //newQuery = newQuery + flag.ToString();
+                            newQuery = newQuery + substr[0] + ' ';
+                            newQuery = newQuery + '*' + ' ';
+                            for (int i = 2; i < substr.Length; i++)
+                                newQuery = newQuery + substr[i] + ' ';
+                            //newQuery = newQuery + '~';
+                            return newQuery;
+                        }
+
+                    case "INSERT":
+                        {
+                            //flag = 2;
+                            //newQuery = newQuery + flag.ToString();
+
+                            int position = 6, len = substr.Length - 1;
+                            for (int i = 0; i < substr.Length; i++)
+                            {
+                                if (substr[i].ToUpper() == "VALUES")
+                                    position = i - 1;
+                                // - "user_pwd)"
+                            }
+                            string hash = "";
+
+                            substr[position] = substr[position].TrimEnd(')') + ',' + " row_hash)"; // удаляем скобку, ставим запятую и продолжаем до row_hash)
+
+                            substr[len] = substr[len].TrimEnd(')', ';') + ',';
+
+                            for (int i = 0; i < substr.Length; i++)
+                            {
+                                newQuery = newQuery + substr[i] + ' ';
+                                if (i > position + 1) hash += substr[i] + ' ';
+                            }
+
+                            hash = hash.Trim();
+                            string[] subs = hash.Split(',');
+                            hash = "";
+                            for (int i = 0; i < subs.Length; i++)
+                            {
+                                hash = hash + subs[i].Trim(',', '(', ')', '\\', '"', ' ');
+                            }
+                            //Console.WriteLine(hash);
+                            using (SHA256 sha256Hash = SHA256.Create())
+                            {
+                                hash = GetHash(sha256Hash, hash);
+                            }
+
+                            newQuery = newQuery + "\"" + hash + "\");";
+                            return newQuery;
+                        }
+
+                    case "UPDATE":
+                        {
+                            //"UPDATE userlog SET user_pwd = "parol" WHERE id = 1;"
+                            //"UPDATE userlog SET user_pwd = \"parol\", row_hash = \"~\" WHERE id = 1;"
+                            //1) обновить данные
+                            //2) пересчитать хэш для новой строки 
+                            //3) обновить "row_hash = new hash"
+                            //flag = 3;
+                            string name = "";
+                            string login = "";
+                            string pwd = "";
+                            newQuery = newQuery + flag.ToString();
+
+                            int position = 6, len = substr.Length - 1;
+                            for (int i = 0; i < substr.Length; i++)
+                            {
+                                switch (substr[i].ToUpper().Trim('"'))
+                                {
+                                    case "WHERE":
+                                        {
+                                            position = i - 1;
+                                            break;
+                                        }
+                                    case "USER_NAME":
+                                        {
+                                            int j;
+                                            for (j = i + 2; j < substr.Length; j++)
+                                            {
+                                                name = name + substr[j].Trim('"') + ' ';
+                                                if (substr[j].EndsWith(',')) break;
+                                            }
+                                            i = j;
+                                            name = name.Trim('"', '\\', ' ', ',');
+
+                                            break;
+                                        }
+                                    case "USER_LOGIN":
+                                        {
+                                            int j;
+                                            for (j = i + 2; j < substr.Length; j++)
+                                            {
+                                                login = login + substr[j].Trim('"') + ' ';
+                                                if (substr[j].EndsWith(',')) break;
+                                            }
+                                            i = j;
+                                            login = login.Trim('"', '\\', ' ', ',');
+
+                                            break;
+                                        }
+                                    case "USER_PWD":
+                                        {
+                                            int j;
+                                            for (j = i + 2; j < substr.Length; j++)
+                                            {
+                                                pwd = pwd + substr[j].Trim('"') + ' ';
+                                                if (substr[j].EndsWith(',') || substr[j].EndsWith('"')) break;
+                                            }
+                                            i = j;
+                                            pwd = pwd.Trim('"', '\\', ' ', ',');
+
+                                            break;
+                                        }
+                                    default:
+                                        break;
+                                }
+                                //if (substr[i].ToUpper() == "WHERE")
+                                //    position = i - 1;
+
+                                // - "parol"
+                            }
+
+                            string condition = new string("");
+                            for (int i = position + 1; i < substr.Length; i++)
+                            {
+                                condition = condition + substr[i] + ' ';
+                            }
+                           
+
+                            string hash = "mynewhash";
+                            string resTable = tableToString(performSecQuery("select * from userlog " + condition));
+                            //14	Elena Maskova	elenam0110	strongqwerty123	966058a65fbfab345a8a3388274b24f4c318a10e320307600ce7279c0cf95642
+                            string[] chop = resTable.Split('\t');
+
+                            resTable = chop[1] + chop[2] + chop[3]; //name + login + password
+                            if (name == "") name = chop[1];
+                            if (login == "") login = chop[2];
+                            if (pwd == "") pwd = chop[3];
+
+                            using (SHA256 sha256Hash = SHA256.Create())
+                            {
+                                hash = GetHash(sha256Hash, resTable);
+                            }
+
+                            //hash = findRowHash(resTable);
+                            //
+                            //substr[position] = substr[position] + ',';
+                            ////substr[position] = substr[position] + " row_hash = \"~\"";
+                            //substr[position] = substr[position] + " row_hash = \"" + hash +"\"";
+
+                            for (int i = 0; i < substr.Length; i++)
+                            {
+                                newQuery = newQuery + substr[i] + ' ';
+                            }
+
+                            newQuery = $"UPDATE userlog SET user_name = \"{name}\", user_login = \"{login}\", user_pwd = \"{pwd}\", row_hash = \"{hash}\" {condition}";
+
+                            return newQuery;
+                        }
+
+                    case "DELETE":
+                        {
+                            //flag = 4;
+                            //newQuery = newQuery + flag.ToString();
+                            for (int i = 0; i < substr.Length; i++)
+                                newQuery = newQuery + substr[i] + ' ';
+                            return newQuery;
+                        }
+
+
+                    default: return query;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return query;
+            }
+        }
+
+        
+    }
+}
+
+ //insertMySql();
+    //showColumnsMySql();
+    //queryMySql();
+    //searchMySql("qwerty");
+
+    //Console.WriteLine($"The SHA256 hash of {source} is: {hash}.");
