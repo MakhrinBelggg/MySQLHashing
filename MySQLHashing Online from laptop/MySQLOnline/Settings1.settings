@@ -1,0 +1,15 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="MySQLOnline" GeneratedClassName="Settings1">
+  <Profiles />
+  <Settings>
+    <Setting Name="dbName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">mytestcompany</Value>
+    </Setting>
+    <Setting Name="login" Type="System.String" Scope="User">
+      <Value Profile="(Default)">toster_admin</Value>
+    </Setting>
+    <Setting Name="password" Type="System.String" Scope="User">
+      <Value Profile="(Default)">GLEBPCtoster2</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
